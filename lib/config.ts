@@ -9,9 +9,16 @@ export const BARBEARIA = {
   bio: "+10 anos de experiência em cortes masculinos modernos e clássicos. Especialista em degradê, barba modelada e visagismo.",
   endereco: "Rua Exemplo, 123 - Centro, São Paulo - SP",
   // Somente números com DDI + DDD (usado nos links de WhatsApp e telefone)
-  whatsapp: "5511999999999",
-  telefoneExibicao: "(11) 99999-9999",
+  whatsapp: "5519995068253",
+  telefoneExibicao: "(19) 99506-8253",
   instagram: "https://instagram.com/",
+};
+
+/** Contato de quem desenvolveu o site (aparece no rodapé). */
+export const DESENVOLVEDOR = {
+  nome: "Marcos Bizzarri",
+  whatsapp: "5519994449107",
+  telefoneExibicao: "(19) 99444-9107",
 };
 
 /** Horário de funcionamento: primeiro e último horário que pode ser agendado. */

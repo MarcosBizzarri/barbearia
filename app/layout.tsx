@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito_Sans, Playfair_Display } from "next/font/google";
+import { BotaoWhatsApp } from "@/components/BotaoWhatsApp";
 import { Cabecalho } from "@/components/Cabecalho";
+import { InstalarApp } from "@/components/InstalarApp";
 import { Rodape } from "@/components/Rodape";
 import { BARBEARIA } from "@/lib/config";
 import "./globals.css";
@@ -11,6 +13,12 @@ const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["lati
 export const metadata: Metadata = {
   title: BARBEARIA.nome,
   description: "Agende seu horário em poucos cliques. Sem espera, sem complicação.",
+  icons: { icon: "/icone.svg", apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: BARBEARIA.nomeCurto, statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#dc4a3f",
 };
 
 // Aplica o tema salvo antes da página aparecer (evita "piscar" claro/escuro)
@@ -26,6 +34,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Cabecalho />
         <main className="flex-1 flex flex-col">{children}</main>
         <Rodape />
+        <BotaoWhatsApp />
+        <InstalarApp />
       </body>
     </html>
   );
