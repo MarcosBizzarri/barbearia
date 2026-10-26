@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// Regras de segurança da barbearia.
+// Publicar com: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() {
+      return request.auth != null;
+    }
+    function eu(uid) {
+      return logado() && request.auth.uid == uid;
+    }
+    // Para tornar alguém administrador: crie o documento admins/{UID da pessoa}
+    // pelo console do Firebase (qualquer conteúdo, ex.: { nome: "Alexandre" }).
+    function admin() {
+      return logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function dataValida(d) {
+      return d is string && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    function horaValida(h) {
+      return h is string && h.matches('^[0-9]{2}:[0-9]{2}$');
+    }
+
+    match /admins/{uid} {
+      allow read: if eu(uid);
+      allow write: if false;
+    }
+
+    match /usuarios/{uid} {
+      allow read: if eu(uid) || admin();
+      allow create, update: if eu(uid)
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() <= 80;
+      allow delete: if false;
+    }
+
+    // Trava do horário: o id é "AAAA-MM-DD_HHMM". Só existe um documento por horário,
+    // então "create" falha se alguém já reservou (não existe update).
+    // Leitura pública: só tem data/hora/uid, sem dados pessoais.
+    match /horarios/{id} {
+      allow read: if true;
+      allow create: if logado()
+        && request.resource.data.uid == request.auth.uid
+        && dataValida(request.resource.data.data)
+        && horaValida(request.resource.data.hora)
+        && id == request.resource.data.data + '_' + request.resource.data.hora.replace(':', '')
+        && request.resource.data.keys().hasOnly(['data', 'hora', 'uid']);
+      allow update: if false;
+      allow delete: if logado() && (resource.data.uid == request.auth.uid || admin());
+    }
+
+    // Detalhes do agendamento (nome, telefone, serviço): só o dono e o barbeiro veem.
+    match /agendamentos/{id} {
+      allow read: if logado() && (resource.data.uid == request.auth.uid || admin());
+      allow create: if logado()
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/horarios/$(id)).data.uid == request.auth.uid
+        && request.resource.data.data == getAfter(/databases/$(database)/documents/horarios/$(id)).data.data
+        && request.resource.data.hora == getAfter(/databases/$(database)/documents/horarios/$(id)).data.hora;
+      allow update: if false;
+      allow delete: if logado() && (resource.data.uid == request.auth.uid || admin());
+    }
+
+    // Fila de chegada: pública (só primeiro nome). Cliente entra/sai só com o próprio id.
+    match /fila/{id} {
+      allow read: if true;
+      allow create: if admin() || (
+        eu(request.resource.data.uid)
+        && id == request.resource.data.data + '_' + request.auth.uid
+        && request.resource.data.status == 'aguardando'
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() <= 40
+      );
+      allow update: if admin();
+      allow delete: if admin() || (logado() && resource.data.uid == request.auth.uid);
+    }
+  }
+}
